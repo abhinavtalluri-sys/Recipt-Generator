@@ -5,369 +5,62 @@
   <title>Receipt Generator</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-:root { --primary: #1a73e8; --muted: #666; --bg: #f5f7fb; --card: #fff; }
-body { margin:0; font-family: "Segoe UI", Arial, sans-serif; background:var(--bg); color:#222; }
-.wrap { max-width:980px; margin:28px auto; padding:18px; display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; justify-content:center; }
-.card { background:var(--card); border-radius:10px; padding:18px; box-shadow:0 6px 18px rgba(0,0,0,0.06); width:420px; box-sizing:border-box; }
-h1 { font-size:20px; margin:0 0 10px; color:var(--primary); text-align:center; }
-label { display:block; margin-top:12px; font-weight:600; color:#2b2b2b; }
-select,input,textarea,button { width:100%; padding:10px 12px; margin-top:6px; border-radius:8px; border:1px solid #d6dbe8; font-size:14px; box-sizing:border-box; }
-textarea { min-height:84px; resize:vertical; }
-button { background:var(--primary); color:#fff; border:0; font-weight:700; cursor:pointer; padding:12px; border-radius:8px; margin-top:14px; }
-button:disabled { opacity:0.6; cursor:not-allowed; }
-.small { font-size:13px; color:var(--muted); margin-top:8px; }
-
-/* Sale Type Toggle */
-.sale-type-wrap { display:flex; gap:10px; margin-top:8px; }
-.sale-type-btn { flex:1; padding:12px; border:2px solid #d6dbe8; background:#fff; color:#444; font-weight:700; font-size:14px; border-radius:8px; cursor:pointer; transition:all 0.2s; }
-.sale-type-btn.active { border-color:var(--primary); background:var(--primary); color:#fff; }
-
-/* Sections */
-.section { display:none; }
-.section.visible { display:block; }
-
-/* Overlay */
-#overlay { position:fixed; inset:0; display:none; background:rgba(255,255,255,0.8); align-items:center; justify-content:center; z-index:9999; }
-.spinner { width:56px; height:56px; border-radius:50%; border:6px solid #eee; border-top:6px solid var(--primary); animation:spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.result { width:100%; max-width:940px; margin-top:8px; }
-.result .box { text-align:center; padding:20px; }
-.button-link { display:inline-block; padding:10px 16px; background:var(--primary); color:#fff; text-decoration:none; border-radius:8px; font-weight:700; margin-top:10px; }
-iframe.preview { width:100%; max-width:760px; height:820px; border:0; margin-top:14px; border-radius:8px; }
-#toast { display:none; position:fixed; left:50%; transform:translateX(-50%); bottom:26px; background:#ef4444; color:#fff; padding:10px 16px; border-radius:8px; z-index:10001; }
-
-/* Searchable Dropdown */
-.searchable-dropdown { position:relative; width:100%; }
-.dropdown-display { width:100%; padding:10px 12px; margin-top:6px; border-radius:8px; border:1px solid #d6dbe8; font-size:14px; box-sizing:border-box; cursor:pointer; background:#fff; display:flex; justify-content:space-between; align-items:center; }
-.dropdown-display::after { content:'▼'; color:var(--muted); font-size:12px; }
-.dropdown-content { position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #d6dbe8; border-top:none; border-radius:0 0 8px 8px; max-height:250px; overflow-y:auto; z-index:1000; display:none; box-shadow:0 4px 8px rgba(0,0,0,0.1); }
-.dropdown-search { width:100%; padding:8px 12px; border:none; border-bottom:1px solid #e0e0e0; font-size:14px; box-sizing:border-box; outline:none; }
-.dropdown-options { max-height:200px; overflow-y:auto; }
-.dropdown-option { padding:10px 12px; cursor:pointer; border-bottom:1px solid #f0f0f0; }
-.dropdown-option:hover { background:#f5f5f5; }
-.dropdown-option:last-child { border-bottom:none; }
-.no-results { padding:10px 12px; color:var(--muted); text-align:center; font-style:italic; }
-
-@media(max-width:940px){ .wrap{ flex-direction:column; align-items:center } .card{ width:92%; } .result .box{ width:92%; } }
+    :root { --primary: #1a73e8; --muted: #666; --bg: #f5f7fb; --card: #fff; }
+    body { margin:0; font-family: "Segoe UI", Arial, sans-serif; background:var(--bg); color:#222; }
+    .wrap { max-width:980px; margin:28px auto; padding:18px; display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; justify-content:center; }
+    .card { background:var(--card); border-radius:10px; padding:18px; box-shadow:0 6px 18px rgba(0,0,0,0.06); width:420px; box-sizing:border-box; }
+    h1 { font-size:20px; margin:0 0 10px; color:var(--primary); text-align:center; }
+    label { display:block; margin-top:12px; font-weight:600; color:#2b2b2b; }
+    select,input,textarea,button { width:100%; padding:10px 12px; margin-top:6px; border-radius:8px; border:1px solid #d6dbe8; font-size:14px; box-sizing:border-box; }
+    textarea { min-height:84px; resize:vertical; }
+    button { background:var(--primary); color:#fff; border:0; font-weight:700; cursor:pointer; padding:12px; border-radius:8px; margin-top:14px; }
+    button:disabled { opacity:0.6; cursor:not-allowed; }
+    .small { font-size:13px; color:var(--muted); margin-top:8px; }
+    #overlay { position:fixed; inset:0; display:none; background:rgba(255,255,255,0.8); align-items:center; justify-content:center; z-index:9999; }
+    .spinner { width:56px; height:56px; border-radius:50%; border:6px solid #eee; border-top:6px solid var(--primary); animation:spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .result { width:100%; max-width:940px; margin-top:8px; }
+    .result .box { text-align:center; padding:20px; }
+    .button-link { display:inline-block; padding:10px 16px; background:var(--primary); color:#fff; text-decoration:none; border-radius:8px; font-weight:700; margin-top:10px; }
+    iframe.preview { width:100%; max-width:760px; height:820px; border:0; margin-top:14px; border-radius:8px; }
+    #toast { display:none; position:fixed; left:50%; transform:translateX(-50%); bottom:26px; background:#ef4444; color:#fff; padding:10px 16px; border-radius:8px; z-index:10001; }
+    
+    /* Searchable Dropdown Styles */
+    .searchable-dropdown { position: relative; width: 100%; }
+    .dropdown-display { width: 100%; padding: 10px 12px; margin-top: 6px; border-radius: 8px; border: 1px solid #d6dbe8; font-size: 14px; box-sizing: border-box; cursor: pointer; background: #fff; display: flex; justify-content: space-between; align-items: center; }
+    .dropdown-display:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,115,232,0.06); }
+    .dropdown-display::after { content: '▼'; color: var(--muted); font-size: 12px; }
+    .dropdown-content { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #d6dbe8; border-top: none; border-radius: 0 0 8px 8px; max-height: 250px; overflow-y: auto; z-index: 1000; display: none; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .dropdown-search { width: 100%; padding: 8px 12px; border: none; border-bottom: 1px solid #e0e0e0; font-size: 14px; box-sizing: border-box; outline: none; }
+    .dropdown-search:focus { border-bottom-color: var(--primary); }
+    .dropdown-options { max-height: 200px; overflow-y: auto; }
+    .dropdown-option { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; }
+    .dropdown-option:hover { background-color: #f5f5f5; }
+    .dropdown-option.selected { background-color: var(--primary); color: white; }
+    .no-results { padding: 10px 12px; color: var(--muted); text-align: center; font-style: italic; }
+    
+    /* Radio button styles for rental/cash sale */
+    .radio-group { display: flex; gap: 20px; margin-top: 8px; }
+    .radio-option { display: flex; align-items: center; gap: 5px; }
+    .radio-option input[type="radio"] { width: auto; margin: 0; }
+    
+    @media(max-width:940px){ .wrap{ flex-direction:column; align-items:center } .card{ width:92%; } .result .box{ width:92%; } }
   </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="card">
-    <h1>Generate Receipt</h1>
-    <form id="receiptForm">
-
-      <!-- SALE TYPE SELECTOR -->
-      <label>Sale Type</label>
-      <div class="sale-type-wrap">
-        <button type="button" class="sale-type-btn active" id="btnRental" onclick="setSaleType('rental')">🚗 Rental Driver</button>
-        <button type="button" class="sale-type-btn" id="btnCash" onclick="setSaleType('cash')">💵 Cash Sale</button>
-      </div>
-      <input type="hidden" id="saleType" value="rental">
-
-      <!-- RENTAL DRIVER SECTION -->
-      <div class="section visible" id="rentalSection">
-        <label>Driver ID</label>
-        <div class="searchable-dropdown">
-          <div class="dropdown-display" id="customerDropdown" tabindex="0">
-            <span id="selectedCustomer">Loading customers...</span>
-          </div>
-          <div class="dropdown-content" id="dropdownContent">
-            <input type="text" class="dropdown-search" id="customerSearch" placeholder="Search by ID or name...">
-            <div class="dropdown-options" id="customerOptions"></div>
-          </div>
-        </div>
-        <div id="customerPreview" class="small"></div>
-        <label>Contact (auto-filled)</label>
-        <input id="contactNumber" readonly placeholder="Auto-filled from driver">
-      </div>
-
-      <!-- CASH SALE SECTION -->
-      <div class="section" id="cashSection">
-        <label>Customer Name</label>
-        <input id="cashName" type="text" placeholder="Enter customer name">
-        <label>Phone Number</label>
-        <input id="cashPhone" type="tel" placeholder="Enter phone number">
-      </div>
-
-      <!-- COMMON FIELDS -->
-      <label>Amount</label>
-      <input id="amount" type="number" min="0" step="0.01" required placeholder="Enter amount">
-
-      <label>Notes</label>
-      <textarea id="notes" placeholder="Optional notes"></textarea>
-
-      <button id="generateBtn" type="submit">Generate Receipt</button>
-    </form>
+  <div id="app">
+    <!-- Content will be loaded by JavaScript -->
   </div>
 
-  <div class="card" style="width:420px;">
-    <h1 style="font-size:18px;">Last Receipt (this session)</h1>
-    <div id="lastArea" class="small" style="min-height:60px; display:flex; align-items:center; justify-content:center; color:var(--muted);">
-      No receipt generated yet.
+  <div id="overlay">
+    <div style="text-align:center">
+      <div class="spinner"></div>
+      <div style="margin-top:12px; font-weight:700;">Generating receipt...</div>
     </div>
   </div>
-</div>
 
-<div class="result" id="resultSection" style="display:none;">
-  <div class="box">
-    <h1 style="font-size:18px; margin-bottom:6px;">Receipt Generated ✅</h1>
-    <div id="resultMeta" class="small"></div>
-    <div id="resultActions" style="margin-top:12px;"></div>
-    <div id="previewWrap" style="margin-top:12px;"></div>
-    <div style="margin-top:12px;">
-      <button onclick="resetForm()">Generate Another Receipt</button>
-    </div>
-  </div>
-</div>
+  <div id="toast"></div>
 
-<div id="overlay">
-  <div style="text-align:center">
-    <div class="spinner"></div>
-    <div style="margin-top:12px; font-weight:700;">Generating receipt...</div>
-  </div>
-</div>
-
-<div id="toast"></div>
-
-<script>
-var customers = [];
-var filteredCustomers = [];
-var selectedCustomer = null;
-var currentSaleType = 'rental';
-
-function showOverlay(show) { document.getElementById('overlay').style.display = show ? 'flex' : 'none'; }
-
-function showToast(msg) {
-  var t = document.getElementById('toast');
-  t.textContent = msg; t.style.display = 'block';
-  setTimeout(function(){ t.style.display='none'; }, 3000);
-}
-
-// ── Sale Type Toggle ──────────────────────────────────────
-function setSaleType(type) {
-  currentSaleType = type;
-  document.getElementById('saleType').value = type;
-
-  document.getElementById('btnRental').classList.toggle('active', type === 'rental');
-  document.getElementById('btnCash').classList.toggle('active', type === 'cash');
-
-  document.getElementById('rentalSection').classList.toggle('visible', type === 'rental');
-  document.getElementById('cashSection').classList.toggle('visible', type === 'cash');
-
-  // Clear fields on switch
-  if (type === 'cash') {
-    selectedCustomer = null;
-    document.getElementById('selectedCustomer').textContent = '-- Select Customer --';
-    document.getElementById('contactNumber').value = '';
-    document.getElementById('customerPreview').textContent = '';
-  } else {
-    document.getElementById('cashName').value = '';
-    document.getElementById('cashPhone').value = '';
-  }
-}
-
-// ── Customer Dropdown (Rental) ────────────────────────────
-function loadCustomers() {
-  google.script.run
-    .withSuccessHandler(function(data) {
-      customers = data || [];
-      filteredCustomers = customers;
-      populateDropdown();
-    })
-    .withFailureHandler(function(e) {
-      showToast('Failed to load customers: ' + e.message);
-      document.getElementById('selectedCustomer').textContent = 'Error loading';
-    })
-    .getCustomers();
-}
-
-function populateDropdown() {
-  document.getElementById('selectedCustomer').textContent =
-    customers.length === 0 ? 'No customers found' : '-- Select Customer --';
-  renderOptions();
-}
-
-function renderOptions() {
-  var container = document.getElementById('customerOptions');
-  container.innerHTML = '';
-  if (filteredCustomers.length === 0) {
-    container.innerHTML = '<div class="no-results">No customers match your search</div>';
-    return;
-  }
-  filteredCustomers.forEach(function(c) {
-    var div = document.createElement('div');
-    div.className = 'dropdown-option';
-    div.textContent = c.id + ' - ' + c.name;
-    div.addEventListener('click', function(){ selectCustomer(c); });
-    container.appendChild(div);
-  });
-}
-
-function selectCustomer(c) {
-  selectedCustomer = c;
-  document.getElementById('selectedCustomer').textContent = c.id + ' - ' + c.name;
-  document.getElementById('customerPreview').textContent = 'Name: ' + c.name;
-  document.getElementById('contactNumber').value = c.contact;
-  closeDropdown();
-}
-
-function filterCustomers(term) {
-  term = term.toLowerCase();
-  filteredCustomers = customers.filter(function(c){
-    return c.id.toLowerCase().indexOf(term) !== -1 || c.name.toLowerCase().indexOf(term) !== -1;
-  });
-  renderOptions();
-}
-
-function openDropdown() {
-  document.getElementById('dropdownContent').style.display = 'block';
-  document.getElementById('customerSearch').focus();
-}
-
-function closeDropdown() {
-  document.getElementById('dropdownContent').style.display = 'none';
-  document.getElementById('customerSearch').value = '';
-  filteredCustomers = customers;
-  renderOptions();
-}
-
-document.getElementById('customerDropdown').addEventListener('click', function(){
-  var c = document.getElementById('dropdownContent');
-  c.style.display === 'block' ? closeDropdown() : openDropdown();
-});
-document.getElementById('customerSearch').addEventListener('input', function(e){ filterCustomers(e.target.value); });
-document.getElementById('customerSearch').addEventListener('keydown', function(e){ e.stopPropagation(); });
-document.addEventListener('click', function(e){
-  if (!document.querySelector('.searchable-dropdown').contains(e.target)) closeDropdown();
-});
-
-// ── Form Submit ───────────────────────────────────────────
-function handleFormSubmit(e) {
-  e.preventDefault();
-  var btn = document.getElementById('generateBtn');
-  var type = document.getElementById('saleType').value;
-  var amount = document.getElementById('amount').value;
-
-  var formData = { saleType: type, amount: amount, notes: document.getElementById('notes').value || '' };
-
-  if (type === 'rental') {
-    if (!selectedCustomer) { showToast('Please select a driver'); return; }
-    formData.customerId   = selectedCustomer.id;
-    formData.customerName = selectedCustomer.name;
-    formData.contactNumber = selectedCustomer.contact;
-  } else {
-    var name  = document.getElementById('cashName').value.trim();
-    var phone = document.getElementById('cashPhone').value.trim();
-    if (!name)  { showToast('Please enter customer name'); return; }
-    if (!phone) { showToast('Please enter phone number'); return; }
-    formData.customerId    = '';
-    formData.customerName  = name;
-    formData.contactNumber = phone;
-  }
-
-  if (!amount || parseFloat(amount) <= 0) { showToast('Please enter a valid amount'); return; }
-
-  btn.disabled = true;
-  btn.textContent = 'Generating...';
-  showOverlay(true);
-
-  google.script.run
-    .withSuccessHandler(function(result) {
-      showOverlay(false);
-      if (result && result.pdfUrl) {
-        document.querySelector('.wrap').style.display = 'none';
-        renderResult({
-          pdfUrl: result.pdfUrl,
-          receiptId: result.receiptId,
-          customerName: formData.customerName,
-          amount: formData.amount,
-          saleType: type,
-          generatedAt: result.generatedAt,
-          generatedBy: result.generatedBy
-        });
-      } else {
-        btn.disabled = false;
-        btn.textContent = 'Generate Receipt';
-        showToast('Receipt generated but no URL returned');
-      }
-    })
-    .withFailureHandler(function(error) {
-      showOverlay(false);
-      btn.disabled = false;
-      btn.textContent = 'Generate Receipt';
-      showToast('Failed: ' + error.message);
-    })
-    .generateReceipt(formData);
-}
-
-// ── Render Result ─────────────────────────────────────────
-function renderResult(res) {
-  if (!res || !res.pdfUrl) return;
-
-  var saleLabel = res.saleType === 'cash' ? '💵 Cash Sale' : '🚗 Rental Driver';
-
-  document.getElementById('lastArea').innerHTML =
-    '<div style="text-align:center"><strong>' + (res.receiptId||'') + '</strong>' +
-    '<div class="small">' + saleLabel + '</div>' +
-    '<div class="small">' + (res.customerName||'') + '</div>' +
-    '<div class="small">₹ ' + (res.amount||'') + '</div>' +
-    '<div class="small">' + (res.generatedAt||new Date().toLocaleString()) + '</div></div>';
-
-  document.getElementById('resultSection').style.display = 'block';
-
-  document.getElementById('resultMeta').innerHTML =
-    '<div style="background:#e8f5e8;padding:15px;border-radius:8px;border:1px solid #4caf50;margin-bottom:15px;text-align:left;">' +
-    '<div style="color:#2e7d32;font-weight:bold;font-size:16px;margin-bottom:8px;">✅ Receipt Generated Successfully!</div>' +
-    '<div style="color:#388e3c"><strong>Sale Type:</strong> ' + saleLabel + '</div>' +
-    '<div style="color:#388e3c"><strong>Receipt ID:</strong> ' + (res.receiptId||'') + '</div>' +
-    '<div style="color:#388e3c"><strong>Customer:</strong> ' + (res.customerName||'') + '</div>' +
-    '<div style="color:#388e3c"><strong>Amount:</strong> ₹' + (res.amount||'') + '</div>' +
-    '<div style="color:#388e3c"><strong>Generated:</strong> ' + (res.generatedAt||new Date().toLocaleString()) + '</div>' +
-    '<div style="color:#388e3c"><strong>Generated By:</strong> ' + (res.generatedBy||'Unknown') + '</div>' +
-    '</div>';
-
-  document.getElementById('resultActions').innerHTML =
-    '<a class="button-link" target="_blank" href="' + res.pdfUrl + '" style="margin-right:10px;">Open PDF in New Tab</a>';
-
-  var previewWrap = document.getElementById('previewWrap');
-  previewWrap.innerHTML = '';
-  var m = res.pdfUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (m) {
-    var iframe = document.createElement('iframe');
-    iframe.className = 'preview';
-    iframe.src = 'https://drive.google.com/file/d/' + m[1] + '/preview';
-    iframe.title = 'Receipt preview';
-    previewWrap.appendChild(iframe);
-  }
-  window.scrollTo({ top:0, behavior:'smooth' });
-}
-
-// ── Reset ─────────────────────────────────────────────────
-function resetForm() {
-  document.querySelector('.wrap').style.display = 'flex';
-  document.getElementById('resultSection').style.display = 'none';
-  document.getElementById('receiptForm').reset();
-  document.getElementById('customerPreview').textContent = '';
-  document.getElementById('contactNumber').value = '';
-  document.getElementById('cashName').value = '';
-  document.getElementById('cashPhone').value = '';
-  document.getElementById('generateBtn').disabled = false;
-  document.getElementById('generateBtn').textContent = 'Generate Receipt';
-  selectedCustomer = null;
-  currentSaleType = 'rental';
-  document.getElementById('selectedCustomer').textContent = '-- Select Customer --';
-  setSaleType('rental');
-  closeDropdown();
-  window.scrollTo({ top:0, behavior:'smooth' });
-}
-
-// ── Init ──────────────────────────────────────────────────
-window.onload = function() {
-  document.getElementById('receiptForm').addEventListener('submit', handleFormSubmit);
-  setTimeout(loadCustomers, 500);
-};
-</script>
+  <script src="script.js"></script>
 </body>
 </html>
