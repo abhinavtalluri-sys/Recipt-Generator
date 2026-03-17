@@ -1,11 +1,12 @@
-// Configuration
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec'; // Replace with your Apps Script URL
+// Configuration - REPLACE WITH YOUR APPS SCRIPT URL
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 
 // State management
 let customers = [];
 let filteredCustomers = [];
 let selectedCustomer = null;
 let currentUser = null;
+let activeRiders = []; // For cash sale drivers
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
@@ -18,18 +19,21 @@ async function loadInitialData() {
     try {
         showOverlay(true);
         
-        // Get user email and customers in parallel
-        const [userResponse, customersResponse] = await Promise.all([
+        // Get user email, customers, and active riders in parallel
+        const [userResponse, customersResponse, ridersResponse] = await Promise.all([
             fetch(`${APPS_SCRIPT_URL}?action=getUser`),
-            fetch(`${APPS_SCRIPT_URL}?action=getCustomers`)
+            fetch(`${APPS_SCRIPT_URL}?action=getCustomers`),
+            fetch(`${APPS_SCRIPT_URL}?action=getActiveRiders`)
         ]);
         
         const userData = await userResponse.json();
         const customersData = await customersResponse.json();
+        const ridersData = await ridersResponse.json();
         
         currentUser = userData.email;
         customers = customersData.customers || [];
         filteredCustomers = customers;
+        activeRiders = ridersData.riders || []; // Store active riders
         
         updateHeader();
         renderForm();
@@ -54,10 +58,10 @@ function renderForm() {
                     <label>Receipt Type</label>
                     <div class="radio-group">
                         <label class="radio-option">
-                            <input type="radio" name="receiptType" value="rental" checked> Rental
+                            <input type="radio" name="receiptType" value="rental" checked> Rental (Existing Customer)
                         </label>
                         <label class="radio-option">
-                            <input type="radio" name="receiptType" value="cashsale"> Cash Sale
+                            <input type="radio" name="receiptType" value="cashsale"> Cash Sale (Active Rider)
                         </label>
                     </div>
 
@@ -78,11 +82,17 @@ function renderForm() {
                     </div>
 
                     <div id="cashSaleFields" style="display: none;">
-                        <label>Driver Name</label>
-                        <input type="text" id="driverName" placeholder="Enter driver name">
-                        
-                        <label>Driver Phone</label>
-                        <input type="tel" id="driverPhone" placeholder="Enter phone number">
+                        <label>Select Active Rider</label>
+                        <div class="searchable-dropdown" id="riderDropdown">
+                            <div class="dropdown-display" id="riderDropdownDisplay" tabindex="0">
+                                <span id="selectedRider">Select active rider...</span>
+                            </div>
+                            <div class="dropdown-content" id="riderDropdownContent">
+                                <input type="text" class="dropdown-search" id="riderSearch" placeholder="Search riders...">
+                                <div class="dropdown-options" id="riderOptions"></div>
+                            </div>
+                        </div>
+                        <div id="riderPreview" class="small"></div>
                     </div>
 
                     <label>Amount (₹)</label>
@@ -126,14 +136,45 @@ function initializeEventListeners() {
         radio.addEventListener('change', toggleReceiptFields);
     });
 
-    // Dropdown functionality
-    setupDropdown();
+    // Customer dropdown
+    setupDropdown('customer');
+    // Rider dropdown
+    setupDropdown('rider');
 
     // Form submission
     document.getElementById('receiptForm').addEventListener('submit', handleFormSubmit);
 
-    // Populate dropdown with customers
-    populateDropdown();
+    // Populate dropdowns
+    populateCustomerDropdown();
+    populateRiderDropdown();
+}
+
+// Setup dropdown functionality
+function setupDropdown(type) {
+    const dropdown = document.getElementById(`${type}Dropdown`);
+    const content = document.getElementById(`${type}DropdownContent`);
+    const search = document.getElementById(`${type}Search`);
+    const display = document.getElementById(`${type}DropdownDisplay`);
+
+    if (!dropdown || !content) return;
+
+    dropdown.addEventListener('click', function(e) {
+        e.stopPropagation();
+        content.style.display = content.style.display === 'block' ? 'none' : 'block';
+        if (content.style.display === 'block' && search) search.focus();
+    });
+
+    if (search) {
+        search.addEventListener('input', function(e) {
+            filterItems(type, e.target.value);
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!document.querySelector(`#${type}Dropdown`).contains(e.target)) {
+            content.style.display = 'none';
+        }
+    });
 }
 
 // Toggle between rental and cash sale fields
@@ -150,42 +191,34 @@ function toggleReceiptFields() {
     }
 }
 
-// Setup dropdown functionality
-function setupDropdown() {
-    const dropdown = document.getElementById('customerDropdown');
-    const content = document.getElementById('dropdownContent');
-    const search = document.getElementById('customerSearch');
-
-    dropdown.addEventListener('click', function(e) {
-        e.stopPropagation();
-        content.style.display = content.style.display === 'block' ? 'none' : 'block';
-        if (content.style.display === 'block') search.focus();
-    });
-
-    search.addEventListener('input', function(e) {
-        filterCustomers(e.target.value);
-    });
-
-    document.addEventListener('click', function(e) {
-        if (!document.querySelector('.searchable-dropdown').contains(e.target)) {
-            content.style.display = 'none';
-        }
-    });
-}
-
-// Populate dropdown with customers
-function populateDropdown() {
+// Populate customer dropdown
+function populateCustomerDropdown() {
     const optionsContainer = document.getElementById('customerOptions');
     const selectedSpan = document.getElementById('selectedCustomer');
     
     if (!customers.length) {
-        selectedSpan.textContent = 'No customers found';
-        optionsContainer.innerHTML = '<div class="no-results">No customers available</div>';
+        if (selectedSpan) selectedSpan.textContent = 'No customers found';
+        if (optionsContainer) optionsContainer.innerHTML = '<div class="no-results">No customers available</div>';
         return;
     }
 
-    selectedSpan.textContent = '-- Select Customer --';
-    renderOptions();
+    if (selectedSpan) selectedSpan.textContent = '-- Select Customer --';
+    renderCustomerOptions();
+}
+
+// Populate rider dropdown
+function populateRiderDropdown() {
+    const optionsContainer = document.getElementById('riderOptions');
+    const selectedSpan = document.getElementById('selectedRider');
+    
+    if (!activeRiders.length) {
+        if (selectedSpan) selectedSpan.textContent = 'No active riders found';
+        if (optionsContainer) optionsContainer.innerHTML = '<div class="no-results">No active riders available</div>';
+        return;
+    }
+
+    if (selectedSpan) selectedSpan.textContent = '-- Select Rider --';
+    renderRiderOptions();
 }
 
 // Filter customers based on search
@@ -195,12 +228,33 @@ function filterCustomers(searchTerm) {
         customer.id.toLowerCase().includes(term) || 
         customer.name.toLowerCase().includes(term)
     );
-    renderOptions();
+    renderCustomerOptions();
 }
 
-// Render dropdown options
-function renderOptions() {
+// Filter riders based on search
+function filterRiders(searchTerm) {
+    const term = searchTerm.toLowerCase();
+    window.filteredRiders = activeRiders.filter(rider => 
+        rider.id.toLowerCase().includes(term) || 
+        rider.name.toLowerCase().includes(term)
+    );
+    renderRiderOptions();
+}
+
+// Filter items based on type
+function filterItems(type, searchTerm) {
+    if (type === 'customer') {
+        filterCustomers(searchTerm);
+    } else {
+        filterRiders(searchTerm);
+    }
+}
+
+// Render customer options
+function renderCustomerOptions() {
     const optionsContainer = document.getElementById('customerOptions');
+    if (!optionsContainer) return;
+
     optionsContainer.innerHTML = '';
 
     if (!filteredCustomers.length) {
@@ -217,13 +271,49 @@ function renderOptions() {
     });
 }
 
+// Render rider options
+function renderRiderOptions() {
+    const optionsContainer = document.getElementById('riderOptions');
+    if (!optionsContainer) return;
+
+    optionsContainer.innerHTML = '';
+
+    const ridersToShow = window.filteredRiders || activeRiders;
+
+    if (!ridersToShow.length) {
+        optionsContainer.innerHTML = '<div class="no-results">No riders match your search</div>';
+        return;
+    }
+
+    ridersToShow.forEach(rider => {
+        const option = document.createElement('div');
+        option.className = 'dropdown-option';
+        option.textContent = `${rider.id} - ${rider.name} (${rider.contact})`;
+        option.addEventListener('click', () => selectRider(rider));
+        optionsContainer.appendChild(option);
+    });
+}
+
 // Select a customer
 function selectCustomer(customer) {
     selectedCustomer = customer;
     document.getElementById('selectedCustomer').textContent = `${customer.id} - ${customer.name}`;
     document.getElementById('customerPreview').textContent = `Name: ${customer.name}`;
     document.getElementById('contactNumber').value = customer.contact;
-    document.getElementById('dropdownContent').style.display = 'none';
+    document.getElementById('customerDropdownContent').style.display = 'none';
+}
+
+// Select a rider
+function selectRider(rider) {
+    document.getElementById('selectedRider').textContent = `${rider.id} - ${rider.name}`;
+    document.getElementById('riderPreview').textContent = `Name: ${rider.name} | Contact: ${rider.contact}`;
+    
+    // Store selected rider data in a data attribute
+    document.getElementById('riderDropdownDisplay').setAttribute('data-selected-id', rider.id);
+    document.getElementById('riderDropdownDisplay').setAttribute('data-selected-name', rider.name);
+    document.getElementById('riderDropdownDisplay').setAttribute('data-selected-contact', rider.contact);
+    
+    document.getElementById('riderDropdownContent').style.display = 'none';
 }
 
 // Handle form submission
@@ -258,11 +348,14 @@ async function handleFormSubmit(e) {
         formData.customerName = selectedCustomer.name;
         formData.contactNumber = selectedCustomer.contact;
     } else {
-        formData.driverName = document.getElementById('driverName').value;
-        formData.driverPhone = document.getElementById('driverPhone').value;
+        // Get selected rider data
+        const riderDisplay = document.getElementById('riderDropdownDisplay');
+        formData.driverId = riderDisplay.getAttribute('data-selected-id');
+        formData.driverName = riderDisplay.getAttribute('data-selected-name');
+        formData.driverPhone = riderDisplay.getAttribute('data-selected-contact');
         
-        if (!formData.driverName || !formData.driverPhone) {
-            showToast('Please enter driver name and phone');
+        if (!formData.driverId) {
+            showToast('Please select an active rider');
             return;
         }
     }
@@ -275,19 +368,52 @@ async function handleFormSubmit(e) {
     try {
         const response = await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(formData)
         });
 
-        // Since we're using no-cors, we'll assume success
-        showOverlay(false);
-        showToast('Receipt generated successfully!');
+        const result = await response.json();
         
-        // For demo purposes, show success
-        showSuccess(formData);
+        showOverlay(false);
+        
+        if (result.success) {
+            // Hide form and show result
+            document.querySelector('.wrap').style.display = 'none';
+            document.getElementById('resultSection').style.display = 'block';
+            
+            // Update last receipt area
+            document.getElementById('lastArea').innerHTML = `
+                <div style="text-align:center;">
+                    <strong>${result.receiptId}</strong>
+                    <div class="small">${receiptType === 'rental' ? formData.customerName : formData.driverName}</div>
+                    <div class="small">₹${formData.amount}</div>
+                    <div class="small">${new Date().toLocaleString()}</div>
+                </div>
+            `;
+            
+            // Show result meta
+            document.getElementById('resultMeta').innerHTML = `
+                <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; border: 1px solid #4caf50; margin-bottom: 15px; text-align: left;">
+                    <div style="color: #2e7d32; font-weight: bold; font-size: 16px; margin-bottom: 8px;">✅ Receipt Generated Successfully!</div>
+                    <div style="color: #388e3c;"><strong>Receipt ID:</strong> ${result.receiptId}</div>
+                    <div style="color: #388e3c;"><strong>Type:</strong> ${receiptType === 'rental' ? 'Rental' : 'Cash Sale'}</div>
+                    <div style="color: #388e3c;"><strong>Customer/Rider:</strong> ${receiptType === 'rental' ? formData.customerName : formData.driverName}</div>
+                    <div style="color: #388e3c;"><strong>Amount:</strong> ₹${formData.amount}</div>
+                    <div style="color: #388e3c;"><strong>Generated By:</strong> ${currentUser}</div>
+                </div>
+            `;
+            
+            // Add PDF link if available
+            if (result.pdfUrl) {
+                document.getElementById('resultActions').innerHTML = `
+                    <a class="button-link" target="_blank" href="${result.pdfUrl}">Open PDF</a>
+                `;
+            }
+        } else {
+            showToast('Error: ' + result.error);
+        }
         
     } catch (error) {
         showOverlay(false);
@@ -298,20 +424,6 @@ async function handleFormSubmit(e) {
     }
 }
 
-// Show success message (temporary until we get actual response)
-function showSuccess(formData) {
-    document.querySelector('.wrap').style.display = 'none';
-    document.getElementById('resultSection').style.display = 'block';
-    
-    document.getElementById('resultMeta').innerHTML = `
-        <div style="background: #e8f5e8; padding: 15px; border-radius: 8px;">
-            <div style="color: #2e7d32;">✅ Receipt Generated Successfully!</div>
-            <div>Type: ${formData.receiptType === 'rental' ? 'Rental' : 'Cash Sale'}</div>
-            <div>Amount: ₹${formData.amount}</div>
-        </div>
-    `;
-}
-
 // Reset form
 function resetForm() {
     document.querySelector('.wrap').style.display = 'flex';
@@ -319,8 +431,16 @@ function resetForm() {
     document.getElementById('receiptForm').reset();
     document.getElementById('customerPreview').textContent = '';
     document.getElementById('contactNumber').value = '';
-    selectedCustomer = null;
+    document.getElementById('riderPreview').textContent = '';
     document.getElementById('selectedCustomer').textContent = '-- Select Customer --';
+    document.getElementById('selectedRider').textContent = '-- Select Rider --';
+    selectedCustomer = null;
+    
+    // Clear rider data attributes
+    const riderDisplay = document.getElementById('riderDropdownDisplay');
+    riderDisplay.removeAttribute('data-selected-id');
+    riderDisplay.removeAttribute('data-selected-name');
+    riderDisplay.removeAttribute('data-selected-contact');
 }
 
 // Update header with user info
