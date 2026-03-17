@@ -1,8 +1,5 @@
-// Configuration - REPLACE WITH YOUR ACTUAL APPS SCRIPT URL AFTER DEPLOYMENT
+// Configuration - REPLACE WITH YOUR ACTUAL APPS SCRIPT URL
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
-
-// GitHub Pages URL (for reference)
-const GITHUB_PAGES_URL = 'https://abhinavtalluri-sys.github.io/Recipt-Generator';
 
 // State management
 let customers = [];
@@ -22,7 +19,7 @@ async function loadInitialData() {
     try {
         showOverlay(true);
         
-        // Get user email, customers, and active riders in parallel
+        // Get user email, customers, and active riders
         const [userResponse, customersResponse, ridersResponse] = await Promise.all([
             fetch(`${APPS_SCRIPT_URL}?action=getUser`),
             fetch(`${APPS_SCRIPT_URL}?action=getCustomers`),
@@ -43,7 +40,7 @@ async function loadInitialData() {
         
     } catch (error) {
         showToast('Failed to load data: ' + error.message);
-        renderForm(); // Render form even if data fails to load
+        renderForm();
     } finally {
         showOverlay(false);
     }
@@ -117,18 +114,6 @@ function renderForm() {
                 </div>
             </div>
         </div>
-
-        <div class="result" id="resultSection" style="display:none;">
-            <div class="box">
-                <h1 style="font-size:18px; margin-bottom:6px;">✅ Receipt Generated</h1>
-                <div id="resultMeta" class="small"></div>
-                <div id="resultActions" style="margin-top:12px;"></div>
-                <div id="previewWrap" style="margin-top:12px;"></div>
-                <div style="margin-top:12px;">
-                    <button onclick="resetForm()">Generate Another Receipt</button>
-                </div>
-            </div>
-        </div>
     `;
 
     initializeEventListeners();
@@ -138,17 +123,12 @@ function renderForm() {
 
 // Initialize all event listeners
 function initializeEventListeners() {
-    // Receipt type toggle
     document.querySelectorAll('input[name="receiptType"]').forEach(radio => {
         radio.addEventListener('change', toggleReceiptFields);
     });
 
-    // Customer dropdown
     setupDropdown('customer');
-    // Rider dropdown
     setupDropdown('rider');
-
-    // Form submission
     document.getElementById('receiptForm').addEventListener('submit', handleFormSubmit);
 }
 
@@ -160,26 +140,18 @@ function setupDropdown(type) {
     
     if (!dropdown || !content) return;
 
-    // Click on dropdown display
     dropdown.querySelector('.dropdown-display').addEventListener('click', function(e) {
         e.stopPropagation();
-        const isVisible = content.style.display === 'block';
-        content.style.display = isVisible ? 'none' : 'block';
-        if (!isVisible && search) search.focus();
+        content.style.display = content.style.display === 'block' ? 'none' : 'block';
+        if (content.style.display === 'block' && search) search.focus();
     });
 
-    // Search input
     if (search) {
         search.addEventListener('input', function(e) {
             filterItems(type, e.target.value);
         });
-        
-        search.addEventListener('keydown', function(e) {
-            e.stopPropagation();
-        });
     }
 
-    // Close when clicking outside
     document.addEventListener('click', function(e) {
         if (!dropdown.contains(e.target)) {
             content.style.display = 'none';
@@ -205,32 +177,24 @@ function toggleReceiptFields() {
 // Populate customer dropdown
 function populateCustomerDropdown() {
     const optionsContainer = document.getElementById('customerOptions');
-    const selectedSpan = document.getElementById('selectedCustomer');
-    
     if (!optionsContainer) return;
     
     if (!customers.length) {
-        if (selectedSpan) selectedSpan.textContent = 'No customers found';
         optionsContainer.innerHTML = '<div class="no-results">No customers available</div>';
         return;
     }
-
     renderCustomerOptions();
 }
 
 // Populate rider dropdown
 function populateRiderDropdown() {
     const optionsContainer = document.getElementById('riderOptions');
-    const selectedSpan = document.getElementById('selectedRider');
-    
     if (!optionsContainer) return;
     
     if (!activeRiders.length) {
-        if (selectedSpan) selectedSpan.textContent = 'No riders found';
         optionsContainer.innerHTML = '<div class="no-results">No active riders available</div>';
         return;
     }
-
     renderRiderOptions();
 }
 
@@ -321,7 +285,6 @@ function selectRider(rider) {
     document.getElementById('selectedRider').textContent = `${rider.id} - ${rider.name}`;
     document.getElementById('riderPreview').textContent = `👤 ${rider.name} | 📞 ${rider.contact}`;
     
-    // Store rider data
     const riderDisplay = document.querySelector('#riderDropdown .dropdown-display');
     riderDisplay.setAttribute('data-selected-id', rider.id);
     riderDisplay.setAttribute('data-selected-name', rider.name);
@@ -337,7 +300,6 @@ async function handleFormSubmit(e) {
     const btn = document.getElementById('generateBtn');
     const receiptType = document.querySelector('input[name="receiptType"]:checked').value;
     
-    // Validate based on receipt type
     if (receiptType === 'rental' && !selectedCustomer) {
         showToast('Please select a customer');
         return;
@@ -349,7 +311,6 @@ async function handleFormSubmit(e) {
         return;
     }
 
-    // Prepare form data
     const formData = {
         receiptType: receiptType,
         amount: amount,
@@ -377,7 +338,6 @@ async function handleFormSubmit(e) {
         formData.driverPhone = riderContact;
     }
 
-    // Show loading
     btn.disabled = true;
     btn.textContent = "Generating...";
     showOverlay(true);
@@ -396,83 +356,19 @@ async function handleFormSubmit(e) {
         showOverlay(false);
         
         if (result.success) {
-            // Hide form and show result
-            document.querySelector('.wrap').style.display = 'none';
-            document.getElementById('resultSection').style.display = 'block';
-            
-            // Update last receipt area
-            document.getElementById('lastArea').innerHTML = `
-                <div style="text-align:center;">
-                    <strong>${result.receiptId}</strong>
-                    <div class="small">${receiptType === 'rental' ? formData.customerName : formData.driverName}</div>
-                    <div class="small">₹${formData.amount}</div>
-                    <div class="small">${new Date().toLocaleString()}</div>
-                </div>
-            `;
-            
-            // Show result meta
-            document.getElementById('resultMeta').innerHTML = `
-                <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; border: 1px solid #4caf50; margin-bottom: 15px; text-align: left;">
-                    <div style="color: #2e7d32; font-weight: bold; font-size: 16px; margin-bottom: 8px;">✅ Receipt Generated Successfully!</div>
-                    <div style="color: #388e3c;"><strong>Receipt ID:</strong> ${result.receiptId}</div>
-                    <div style="color: #388e3c;"><strong>Type:</strong> ${receiptType === 'rental' ? 'Rental' : 'Cash Sale'}</div>
-                    <div style="color: #388e3c;"><strong>Customer/Rider:</strong> ${receiptType === 'rental' ? formData.customerName : formData.driverName}</div>
-                    <div style="color: #388e3c;"><strong>Contact:</strong> ${receiptType === 'rental' ? formData.contactNumber : formData.driverPhone}</div>
-                    <div style="color: #388e3c;"><strong>Amount:</strong> ₹${formData.amount}</div>
-                    <div style="color: #388e3c;"><strong>Notes:</strong> ${formData.notes || 'None'}</div>
-                    <div style="color: #388e3c;"><strong>Generated By:</strong> ${currentUser || 'Unknown'}</div>
-                </div>
-            `;
-            
-            // Add PDF link if available
-            if (result.pdfUrl) {
-                document.getElementById('resultActions').innerHTML = `
-                    <a class="button-link" target="_blank" href="${result.pdfUrl}">📄 Open PDF</a>
-                `;
-                
-                // Try to show PDF preview
-                const fileIdMatch = result.pdfUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                if (fileIdMatch) {
-                    document.getElementById('previewWrap').innerHTML = `
-                        <iframe class="preview" src="https://drive.google.com/file/d/${fileIdMatch[1]}/preview" title="Receipt preview"></iframe>
-                    `;
-                }
-            }
+            // Redirect to the receipt page in Apps Script
+            window.location.href = `${APPS_SCRIPT_URL}?page=receipt&receiptUrl=${encodeURIComponent(result.pdfUrl)}&receiptId=${result.receiptId}`;
         } else {
             showToast('Error: ' + (result.error || 'Unknown error'));
         }
         
     } catch (error) {
         showOverlay(false);
-        showToast('Failed to generate receipt: ' + error.message);
+        showToast('Failed: ' + error.message);
     } finally {
         btn.disabled = false;
         btn.textContent = "Generate Receipt";
     }
-}
-
-// Reset form
-function resetForm() {
-    document.querySelector('.wrap').style.display = 'flex';
-    document.getElementById('resultSection').style.display = 'none';
-    document.getElementById('receiptForm').reset();
-    document.getElementById('customerPreview').textContent = '';
-    document.getElementById('contactNumber').value = '';
-    document.getElementById('riderPreview').textContent = '';
-    document.getElementById('selectedCustomer').textContent = customers.length ? '-- Select Customer --' : 'No customers';
-    document.getElementById('selectedRider').textContent = activeRiders.length ? '-- Select Rider --' : 'No riders';
-    document.getElementById('previewWrap').innerHTML = '';
-    selectedCustomer = null;
-    
-    // Clear rider data
-    const riderDisplay = document.querySelector('#riderDropdown .dropdown-display');
-    if (riderDisplay) {
-        riderDisplay.removeAttribute('data-selected-id');
-        riderDisplay.removeAttribute('data-selected-name');
-        riderDisplay.removeAttribute('data-selected-contact');
-    }
-    
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // UI Helpers
