@@ -1,5 +1,5 @@
 // Configuration - REPLACE WITH YOUR ACTUAL APPS SCRIPT URL
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/a/macros/batterypool.com/s/AKfycbw8nN2akkicRAJ8cMUqLLxPFGatXlRCvmi_WNr_7J0JshjIWJM7iff73ifDtWjw7FLPnw/exec';
 
 // State management
 let customers = [];
