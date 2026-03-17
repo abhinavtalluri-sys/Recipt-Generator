@@ -1,5 +1,5 @@
 // Configuration - YOUR ACTUAL APPS SCRIPT URL
-const APPS_SCRIPT_URL = 'https://script.google.com/a/macros/batterypool.com/s/AKfycbw8nN2akkicRAJ8cMUqLLxPFGatXlRCvmi_WNr_7J0JshjIWJM7iff73ifDtWjw7FLPnw/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/a/macros/batterypool.com/s/AKfycbx8DcIfLuuwPUxGhHE29qqzEsXt-vRc4oFFrQMnOXoMvNTWpBzEvB4GeDRhssqSLSJajA/exec';
 
 // State management
 let customers = [];
